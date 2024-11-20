@@ -1,6 +1,8 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.LinkedList;
+import java.util.Stack;
 import javax.swing.filechooser.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -8,6 +10,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class Notepad extends JFrame implements ActionListener {
     JTextArea area;
     String text;
+    Stack<String> undoStack = new Stack<>();
+    Stack<String> redoStack = new Stack<>();
+    LinkedList<String> fileHistory = new LinkedList<>();
     Notepad(){
         setTitle("Notepad");
         ImageIcon notepadIcon = new ImageIcon(ClassLoader.getSystemResource("icons/notepad.png"));
@@ -64,12 +69,29 @@ public class Notepad extends JFrame implements ActionListener {
         paste.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK)));
 
         JMenuItem selectAll = new JMenuItem("Select All");
+        selectAll.addActionListener(this);
         selectAll.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.CTRL_MASK)));
+
+        JMenuItem undo = new JMenuItem("Undo");
+        undo.addActionListener(this);
+        undo.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK)));
+
+        JMenuItem redo = new JMenuItem("Redo");
+        redo.addActionListener(this);
+        redo.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK)));
+
+        JMenuItem searchReplace = new JMenuItem("Search & Replace");
+        searchReplace.addActionListener(this);
+        searchReplace.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK)));
 
         edit.add(copy);
         edit.add(cut);
         edit.add(paste);
         edit.add(selectAll);
+        edit.add(undo);
+        edit.add(redo);
+        edit.add(searchReplace);
+        
 
         menubar.add(edit);
 
@@ -165,11 +187,28 @@ public class Notepad extends JFrame implements ActionListener {
             area.selectAll();
         } else if(ae.getActionCommand().equals("About")) {
             new About().setVisible(true);
+        } else if (ae.getActionCommand().equals("Undo")) {
+            if (!undoStack.isEmpty()) {
+                redoStack.push(area.getText());
+                area.setText(undoStack.pop());
+            }
+        } else if (ae.getActionCommand().equals("Redo")) {
+            if (!redoStack.isEmpty()) {
+                undoStack.push(area.getText());
+                area.setText(redoStack.pop());
+            }
+        } else if (ae.getActionCommand().equals("Search & Replace")) {
+            String search = JOptionPane.showInputDialog(this, "Enter the word to search:");
+            String replace = JOptionPane.showInputDialog(this, "Enter the word to replace:");
+            if (search != null && replace != null) {
+                area.setText(area.getText().replace(search, replace));
+            }
+        } else if (ae.getActionCommand().equals("File History")) {
+            String history = String.join("\n", fileHistory);
+            JOptionPane.showMessageDialog(this, history.isEmpty() ? "No history available." : history, "File History",
+            JOptionPane.INFORMATION_MESSAGE);
         }
     }
-
-
-
     public static void main(String[] args){
         new Notepad();  //anon obj
     }
