@@ -45,10 +45,14 @@ public class Notepad extends JFrame implements ActionListener {
         exit.addActionListener(this);
         exit.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, ActionEvent.CTRL_MASK)));
 
+        JMenuItem history = new JMenuItem("File History");
+        history.addActionListener(this);
+
         file.add(newdoc);
         file.add(open);
         file.add(save);
         file.add(print);
+        file.add(history);
         file.add(exit);
 
         menubar.add(file);
@@ -139,6 +143,10 @@ public class Notepad extends JFrame implements ActionListener {
             }
 
             File file = chooser.getSelectedFile();
+            fileHistory.addFirst(file.getAbsolutePath());
+            if (fileHistory.size() > 10) {
+                fileHistory.removeLast();
+            }   
 
             try {
                 BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -158,6 +166,10 @@ public class Notepad extends JFrame implements ActionListener {
 
             File filename = new File(saveas.getSelectedFile()+".txt");
             BufferedWriter outFile = null;
+            fileHistory.addFirst(filename.getAbsolutePath());
+            if (fileHistory.size() > 10) {
+                fileHistory.removeLast();
+            }
 
             try {
                 outFile = new BufferedWriter(new FileWriter(filename));
