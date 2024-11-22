@@ -5,6 +5,8 @@ import java.util.LinkedList;
 import java.util.Stack;
 import javax.swing.filechooser.*;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Notepad extends JFrame implements ActionListener {
@@ -82,7 +84,7 @@ public class Notepad extends JFrame implements ActionListener {
 
         JMenuItem redo = new JMenuItem("Redo");
         redo.addActionListener(this);
-        redo.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK)));
+        redo.setAccelerator((KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK)));
 
         JMenuItem searchReplace = new JMenuItem("Search & Replace");
         searchReplace.addActionListener(this);
@@ -120,6 +122,34 @@ public class Notepad extends JFrame implements ActionListener {
         JScrollPane pane  = new JScrollPane(area);
         pane.setBorder(BorderFactory.createEmptyBorder());
         add(pane);
+
+        area.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                saveToUndoStack();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                saveToUndoStack();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                saveToUndoStack();
+            }
+
+            private void saveToUndoStack() {
+                // Save only if the text is different
+                if (undoStack.isEmpty() || !undoStack.peek().equals(area.getText())) {
+                    undoStack.push(area.getText());
+                    redoStack.clear(); // Clear redo stack on a new edit
+                }
+            }
+        });
+
+        // Push initial state
+        undoStack.push("");
 
         setExtendedState(JFrame.MAXIMIZED_BOTH );
 
@@ -200,9 +230,9 @@ public class Notepad extends JFrame implements ActionListener {
         } else if(ae.getActionCommand().equals("About")) {
             new About().setVisible(true);
         } else if (ae.getActionCommand().equals("Undo")) {
-            if (!undoStack.isEmpty()) {
-                redoStack.push(area.getText());
-                area.setText(undoStack.pop());
+            if (undoStack.size() > 1) { // At least one prior state
+                redoStack.push(undoStack.pop());
+                area.setText(undoStack.peek());
             }
         } else if (ae.getActionCommand().equals("Redo")) {
             if (!redoStack.isEmpty()) {
